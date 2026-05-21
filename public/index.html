@@ -1,66 +1,625 @@
 <!doctype html>
-<html>
-	<head>
-		<meta charset="utf-8" />
-		<meta
-			name="viewport"
-			content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
-		/>
-		<title>Scramjet</title>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+  <title>Scramjet</title>
+  <meta name="theme-color" content="#0b0f17" />
+  <link rel="shortcut icon" href="favicon.webp" />
 
-		<link rel="shortcut icon" content="favicon.webp" />
-	
-		<script src="/scram/scramjet.all.js"></script>
-		<script src="/baremux/index.js"></script>
-		
-		<link rel="stylesheet" href="index.css" />
-		<script src="register-sw.js" defer></script>
-		<script src="search.js" defer></script>
-		<script src="index.js" defer></script>
-	</head>
+  <script src="/scram/scramjet.all.js"></script>
+  <script src="/baremux/index.js"></script>
 
-	<body>
-		<div title="Scramjet Logo" class="flex-center logo-wrapper header-center">
-			<img class="logo" src="sj.png" alt="Scramjet" />
-			<h1>Scramjet | MW</h1>
-		</div>
-		<div class="flex-center desc left-margin">
-			<p>
-				Scramjet is an experimental interception based web proxy designed to
-				evade internet censorship, bypass arbitrary web browser restrictions and
-				innovate web proxy technologies.
-			</p>
-		</div>
+  <style>
+    :root {
+      --bg: #070b12;
+      --panel: rgba(15, 23, 42, 0.78);
+      --panel-2: rgba(2, 6, 23, 0.7);
+      --border: rgba(148, 163, 184, 0.16);
+      --text: #e5eefc;
+      --muted: #93a4bf;
+      --accent: #6ea8fe;
+      --accent-2: #8b5cf6;
+      --good: #22c55e;
+      --shadow: 0 20px 60px rgba(0,0,0,0.4);
+      --radius: 22px;
+    }
 
-		<form id="sj-form" class="flex-center">
-			<input
-				id="sj-search-engine"
-				value="https://www.google.com/search?q=%s"
-				type="hidden"
-			/>
-			<input id="sj-address" type="text" placeholder="Search the web freely" />
-		</form>
-		<div class="desc left-margin">
-			<p id="sj-error"></p>
-			<pre id="sj-error-code"></pre>
-		</div>
-		<footer>
-			<div>
-				<a
-					title="The Mercury Workshop GitHub organization"
-					href="https://github.com/MercuryWorkshop"
-					>Mercury Workshop</a
-				>
-				<a
-					title="The example demo app for Scramjet"
-					href="https://github.com/MercuryWorkshop/Scramjet-Demo"
-					>GitHub</a
-				>
-				<a title="License information" href="credits.html">Credits</a>
-			</div>
-			<div>
-				<span>Scramjet &copy; MW 2025</span>
-			</div>
-		</footer>
-	</body>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(110,168,254,.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(139,92,246,.16), transparent 26%),
+        linear-gradient(180deg, #06080f 0%, #09101a 100%);
+      overflow: hidden;
+    }
+
+    .app {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto auto auto 1fr auto;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .topbar, .tabs, .bookmarks, .content, footer {
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: auto auto 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-right: 8px;
+      white-space: nowrap;
+    }
+
+    .logo {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 5px;
+    }
+
+    .brand h1 {
+      font-size: 15px;
+      line-height: 1;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 12px;
+    }
+
+    .nav-btn, .pill-btn, .tab-action, .bookmark-chip, .primary-btn {
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .nav-btn:hover, .pill-btn:hover, .tab-action:hover, .bookmark-chip:hover, .primary-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.08);
+      border-color: rgba(110,168,254,.28);
+    }
+
+    .nav-btn {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      user-select: none;
+    }
+
+    .address-shell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      min-height: 48px;
+      border-radius: 16px;
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(2,6,23,.55);
+    }
+
+    #sj-form { margin: 0; width: 100%; }
+    #sj-search-engine { display: none; }
+    #sj-address {
+      width: 100%;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 15px;
+      padding: 12px 0;
+    }
+    #sj-address::placeholder { color: #7d8aa3; }
+
+    .primary-btn {
+      padding: 0 14px;
+      height: 42px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      overflow-x: auto;
+      align-items: center;
+      min-height: 56px;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 180px;
+      max-width: 260px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,.16);
+      background: rgba(255,255,255,.03);
+      cursor: pointer;
+      user-select: none;
+      flex: 0 0 auto;
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, rgba(110,168,254,.24), rgba(139,92,246,.18));
+      border-color: rgba(110,168,254,.35);
+    }
+
+    .tab-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+      flex: 1;
+    }
+
+    .tab-close {
+      width: 24px;
+      height: 24px;
+      border: 0;
+      border-radius: 8px;
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .tabs .spacer { flex: 1; }
+
+    .bookmarks {
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      min-height: 54px;
+    }
+
+    .bookmark-chip {
+      padding: 9px 12px;
+      font-size: 14px;
+      white-space: nowrap;
+      text-decoration: none;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .content {
+      padding: 18px;
+      overflow: auto;
+      background: linear-gradient(180deg, rgba(15,23,42,.76), rgba(2,6,23,.66));
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      border: 1px solid rgba(148,163,184,.14);
+      background: rgba(255,255,255,.03);
+      border-radius: 22px;
+      padding: 18px;
+    }
+
+    .desc p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .section-title {
+      margin: 0 0 10px;
+      font-size: 14px;
+      letter-spacing: .2px;
+      color: #cfe0ff;
+      text-transform: uppercase;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .mini {
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(148,163,184,.12);
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .mini span {
+      display: block;
+      color: var(--muted);
+      margin-top: 4px;
+      font-size: 12px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    #sj-error {
+      color: #fca5a5;
+      white-space: pre-wrap;
+      margin: 10px 0 0;
+      min-height: 1.2em;
+    }
+    #sj-error-code {
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      margin: 10px 0 0;
+      font-size: 12px;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    footer a {
+      color: #d7e6ff;
+      text-decoration: none;
+      margin-right: 14px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .topbar { grid-template-columns: auto 1fr auto; }
+      .brand, .topbar .nav-btn:nth-of-type(2), .topbar .nav-btn:nth-of-type(3) { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      .app { padding: 10px; gap: 10px; }
+      .topbar { grid-template-columns: 1fr auto; }
+      .primary-btn { display: none; }
+      .grid { grid-template-columns: 1fr; }
+      footer { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+
+  <script src="register-sw.js" defer></script>
+  <script src="search.js" defer></script>
+  <script src="index.js" defer></script>
+</head>
+
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand" title="Scramjet">
+        <img class="logo" src="sj.png" alt="Scramjet" />
+        <div>
+          <h1>Scramjet</h1>
+          <small>Fast proxy browser shell</small>
+        </div>
+      </div>
+
+      <button class="nav-btn" id="backBtn" title="Back">←</button>
+      <button class="nav-btn" id="forwardBtn" title="Forward">→</button>
+
+      <div class="address-shell">
+        <form id="sj-form" autocomplete="off">
+          <input id="sj-search-engine" value="https://www.google.com/search?q=%s" type="hidden" />
+          <input id="sj-address" type="text" placeholder="Search the web or enter a URL" />
+        </form>
+      </div>
+
+      <button class="primary-btn" id="newTabBtn">+ Tab</button>
+    </header>
+
+    <section class="tabs" id="tabsBar" aria-label="Tabs">
+      <div class="tab active" data-tab="1">
+        <div class="tab-title">New Tab</div>
+        <button class="tab-close" type="button" title="Close tab">×</button>
+      </div>
+      <div class="spacer"></div>
+      <button class="tab-action" id="saveBookmarkBtn" type="button" title="Save current page">☆</button>
+    </section>
+
+    <section class="bookmarks" id="bookmarkBar" aria-label="Bookmarks">
+      <span style="color: var(--muted); font-size: 13px; padding: 0 6px;">Bookmarks</span>
+      <a class="bookmark-chip" href="https://www.google.com" target="_blank" rel="noreferrer">Google</a>
+      <a class="bookmark-chip" href="https://github.com" target="_blank" rel="noreferrer">GitHub</a>
+      <a class="bookmark-chip" href="https://www.youtube.com" target="_blank" rel="noreferrer">YouTube</a>
+    </section>
+
+    <main class="content">
+      <div class="hero">
+        <section class="card">
+          <div class="flex-center logo-wrapper header-center" style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+            <img class="logo" src="sj.png" alt="Scramjet" style="width:56px;height:56px;" />
+            <div>
+              <h2 style="margin:0;font-size:24px;">Your browser, but cleaner</h2>
+              <p style="margin:6px 0 0;color:var(--muted);">Tabs, bookmarks, and a polished start page on top of the existing Scramjet flow.</p>
+            </div>
+          </div>
+
+          <div class="desc">
+            <p>
+              Scramjet is an experimental interception-based web proxy. This page gives it a more modern front end while keeping the existing navigation, search, and service-worker setup in place.
+            </p>
+          </div>
+
+          <div class="controls">
+            <button class="pill-btn" id="homeBtn" type="button">Home</button>
+            <button class="pill-btn" id="addBookmarkBtn" type="button">Add bookmark</button>
+            <button class="pill-btn" id="clearTabsBtn" type="button">Reset tabs</button>
+          </div>
+
+          <p id="sj-error"></p>
+          <pre id="sj-error-code"></pre>
+        </section>
+
+        <aside class="card">
+          <h3 class="section-title">Quick links</h3>
+          <div class="grid">
+            <a class="mini" href="https://news.google.com" target="_blank" rel="noreferrer">News<span>Open a news tab</span></a>
+            <a class="mini" href="https://www.reddit.com" target="_blank" rel="noreferrer">Reddit<span>Open a community tab</span></a>
+            <a class="mini" href="https://mail.google.com" target="_blank" rel="noreferrer">Mail<span>Check inbox</span></a>
+            <a class="mini" href="https://docs.google.com" target="_blank" rel="noreferrer">Docs<span>Work page</span></a>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <footer>
+      <div>
+        <a title="The Mercury Workshop GitHub organization" href="https://github.com/MercuryWorkshop">Mercury Workshop</a>
+        <a title="The example demo app for Scramjet" href="https://github.com/MercuryWorkshop/Scramjet-Demo">GitHub</a>
+        <a title="License information" href="credits.html">Credits</a>
+      </div>
+      <div>
+        <span>Scramjet &copy; MW 2025</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const tabsBar = document.getElementById('tabsBar');
+    const bookmarkBar = document.getElementById('bookmarkBar');
+    const sjAddress = document.getElementById('sj-address');
+    const sjForm = document.getElementById('sj-form');
+    const sjSearchEngine = document.getElementById('sj-search-engine');
+    const newTabBtn = document.getElementById('newTabBtn');
+    const saveBookmarkBtn = document.getElementById('saveBookmarkBtn');
+    const addBookmarkBtn = document.getElementById('addBookmarkBtn');
+    const clearTabsBtn = document.getElementById('clearTabsBtn');
+    const homeBtn = document.getElementById('homeBtn');
+    const backBtn = document.getElementById('backBtn');
+    const forwardBtn = document.getElementById('forwardBtn');
+
+    const TAB_KEY = 'scramjet-tabs-v1';
+    const BOOKMARK_KEY = 'scramjet-bookmarks-v1';
+    let tabs = loadTabs();
+    let activeTabId = tabs.find(t => t.active)?.id ?? tabs[0]?.id ?? 1;
+
+    function loadTabs() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(TAB_KEY) || 'null');
+        if (Array.isArray(saved) && saved.length) return saved;
+      } catch {}
+      return [{ id: 1, title: 'New Tab', url: '', active: true }];
+    }
+
+    function saveTabs() {
+      localStorage.setItem(TAB_KEY, JSON.stringify(tabs));
+    }
+
+    function loadBookmarks() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(BOOKMARK_KEY) || 'null');
+        if (Array.isArray(saved)) return saved;
+      } catch {}
+      return [
+        { title: 'Google', url: 'https://www.google.com' },
+        { title: 'GitHub', url: 'https://github.com' },
+        { title: 'YouTube', url: 'https://www.youtube.com' }
+      ];
+    }
+
+    function saveBookmarks(items) {
+      localStorage.setItem(BOOKMARK_KEY, JSON.stringify(items));
+    }
+
+    function renderTabs() {
+      const spacer = tabsBar.querySelector('.spacer');
+      tabsBar.querySelectorAll('.tab').forEach(el => el.remove());
+      tabs.forEach(tab => {
+        const el = document.createElement('div');
+        el.className = 'tab' + (tab.id === activeTabId ? ' active' : '');
+        el.dataset.tab = tab.id;
+        el.innerHTML = `
+          <div class="tab-title">${escapeHtml(tab.title || 'New Tab')}</div>
+          <button class="tab-close" type="button" title="Close tab">×</button>
+        `;
+        el.addEventListener('click', (e) => {
+          if (e.target.closest('.tab-close')) {
+            closeTab(tab.id);
+            return;
+          }
+          activateTab(tab.id);
+        });
+        tabsBar.insertBefore(el, spacer);
+      });
+      saveTabs();
+    }
+
+    function renderBookmarks() {
+      const label = bookmarkBar.querySelector('span');
+      bookmarkBar.querySelectorAll('.bookmark-chip').forEach(el => el.remove());
+      const bookmarks = loadBookmarks();
+      bookmarks.forEach(item => {
+        const a = document.createElement('a');
+        a.className = 'bookmark-chip';
+        a.href = item.url;
+        a.target = '_blank';
+        a.rel = 'noreferrer';
+        a.textContent = item.title;
+        bookmarkBar.appendChild(a);
+      });
+      bookmarkBar.prepend(label);
+    }
+
+    function activateTab(id) {
+      activeTabId = id;
+      tabs = tabs.map(tab => ({ ...tab, active: tab.id === id }));
+      renderTabs();
+      const tab = tabs.find(t => t.id === id);
+      if (tab) sjAddress.value = tab.url || '';
+    }
+
+    function openTab(url = '', title = 'New Tab') {
+      const id = Date.now();
+      tabs = tabs.map(t => ({ ...t, active: false }));
+      tabs.push({ id, url, title, active: true });
+      activeTabId = id;
+      sjAddress.value = url;
+      renderTabs();
+    }
+
+    function closeTab(id) {
+      if (tabs.length === 1) {
+        tabs = [{ id: Date.now(), title: 'New Tab', url: '', active: true }];
+        activeTabId = tabs[0].id;
+        sjAddress.value = '';
+        renderTabs();
+        return;
+      }
+      const idx = tabs.findIndex(t => t.id === id);
+      tabs = tabs.filter(t => t.id !== id);
+      if (activeTabId === id) {
+        const next = tabs[idx] || tabs[idx - 1] || tabs[0];
+        activeTabId = next.id;
+        next.active = true;
+        sjAddress.value = next.url || '';
+      }
+      renderTabs();
+    }
+
+    function updateActiveTab(url, title) {
+      tabs = tabs.map(tab => tab.id === activeTabId ? { ...tab, url: url ?? tab.url, title: title ?? tab.title } : tab);
+      saveTabs();
+      renderTabs();
+    }
+
+    function addBookmark(title, url) {
+      if (!url) return;
+      const bookmarks = loadBookmarks();
+      if (bookmarks.some(b => b.url === url)) return;
+      bookmarks.unshift({ title: title || url, url });
+      saveBookmarks(bookmarks.slice(0, 20));
+      renderBookmarks();
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    sjForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const value = sjAddress.value.trim();
+      if (!value) return;
+      updateActiveTab(value, value.replace(/^https?:\/\//, '').slice(0, 28));
+      // Existing search.js/index.js should handle the navigation behavior.
+      sjAddress.blur();
+    });
+
+    newTabBtn.addEventListener('click', () => openTab('', 'New Tab'));
+    homeBtn.addEventListener('click', () => {
+      sjAddress.value = '';
+      updateActiveTab('', 'New Tab');
+    });
+    addBookmarkBtn.addEventListener('click', () => addBookmark(document.title || 'Bookmark', sjAddress.value.trim()));
+    saveBookmarkBtn.addEventListener('click', () => addBookmark(document.title || 'Bookmark', sjAddress.value.trim()));
+    clearTabsBtn.addEventListener('click', () => {
+      tabs = [{ id: Date.now(), title: 'New Tab', url: '', active: true }];
+      activeTabId = tabs[0].id;
+      sjAddress.value = '';
+      renderTabs();
+    });
+
+    backBtn.addEventListener('click', () => history.back());
+    forwardBtn.addEventListener('click', () => history.forward());
+
+    sjAddress.addEventListener('input', () => {
+      updateActiveTab(sjAddress.value.trim(), sjAddress.value.trim() ? sjAddress.value.trim().slice(0, 28) : 'New Tab');
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        sjAddress.focus();
+        sjAddress.select();
+      }
+      if (e.ctrlKey && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        openTab('', 'New Tab');
+      }
+      if (e.ctrlKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        addBookmark(document.title || 'Bookmark', sjAddress.value.trim());
+      }
+    });
+
+    renderTabs();
+    renderBookmarks();
+  </script>
+</body>
 </html>
