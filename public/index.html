@@ -1,625 +1,210 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
-  <title>Scramjet</title>
-  <meta name="theme-color" content="#0b0f17" />
-  <link rel="shortcut icon" href="favicon.webp" />
-
-  <script src="/scram/scramjet.all.js"></script>
-  <script src="/baremux/index.js"></script>
-
-  <style>
-    :root {
-      --bg: #070b12;
-      --panel: rgba(15, 23, 42, 0.78);
-      --panel-2: rgba(2, 6, 23, 0.7);
-      --border: rgba(148, 163, 184, 0.16);
-      --text: #e5eefc;
-      --muted: #93a4bf;
-      --accent: #6ea8fe;
-      --accent-2: #8b5cf6;
-      --good: #22c55e;
-      --shadow: 0 20px 60px rgba(0,0,0,0.4);
-      --radius: 22px;
-    }
-
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(110,168,254,.18), transparent 32%),
-        radial-gradient(circle at top right, rgba(139,92,246,.16), transparent 26%),
-        linear-gradient(180deg, #06080f 0%, #09101a 100%);
-      overflow: hidden;
-    }
-
-    .app {
-      height: 100%;
-      display: grid;
-      grid-template-rows: auto auto auto 1fr auto;
-      gap: 12px;
-      padding: 14px;
-    }
-
-    .topbar, .tabs, .bookmarks, .content, footer {
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      background: var(--panel);
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-      border-radius: var(--radius);
-    }
-
-    .topbar {
-      display: grid;
-      grid-template-columns: auto auto 1fr auto auto;
-      gap: 10px;
-      align-items: center;
-      padding: 12px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding-right: 8px;
-      white-space: nowrap;
-    }
-
-    .logo {
-      width: 38px;
-      height: 38px;
-      object-fit: contain;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.08);
-      padding: 5px;
-    }
-
-    .brand h1 {
-      font-size: 15px;
-      line-height: 1;
-      margin: 0;
-      font-weight: 700;
-      letter-spacing: .2px;
-    }
-
-    .brand small {
-      display: block;
-      color: var(--muted);
-      margin-top: 4px;
-      font-size: 12px;
-    }
-
-    .nav-btn, .pill-btn, .tab-action, .bookmark-chip, .primary-btn {
-      border: 1px solid rgba(148,163,184,.18);
-      background: rgba(255,255,255,.04);
-      color: var(--text);
-      border-radius: 14px;
-      cursor: pointer;
-      transition: transform .12s ease, background .12s ease, border-color .12s ease;
-    }
-    .nav-btn:hover, .pill-btn:hover, .tab-action:hover, .bookmark-chip:hover, .primary-btn:hover {
-      transform: translateY(-1px);
-      background: rgba(255,255,255,.08);
-      border-color: rgba(110,168,254,.28);
-    }
-
-    .nav-btn {
-      width: 42px;
-      height: 42px;
-      display: grid;
-      place-items: center;
-      font-size: 18px;
-      user-select: none;
-    }
-
-    .address-shell {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 0 12px;
-      min-height: 48px;
-      border-radius: 16px;
-      border: 1px solid rgba(148,163,184,.18);
-      background: rgba(2,6,23,.55);
-    }
-
-    #sj-form { margin: 0; width: 100%; }
-    #sj-search-engine { display: none; }
-    #sj-address {
-      width: 100%;
-      border: 0;
-      outline: none;
-      background: transparent;
-      color: var(--text);
-      font-size: 15px;
-      padding: 12px 0;
-    }
-    #sj-address::placeholder { color: #7d8aa3; }
-
-    .primary-btn {
-      padding: 0 14px;
-      height: 42px;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 8px;
-      padding: 8px;
-      overflow-x: auto;
-      align-items: center;
-      min-height: 56px;
-    }
-
-    .tab {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 180px;
-      max-width: 260px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(148,163,184,.16);
-      background: rgba(255,255,255,.03);
-      cursor: pointer;
-      user-select: none;
-      flex: 0 0 auto;
-    }
-
-    .tab.active {
-      background: linear-gradient(135deg, rgba(110,168,254,.24), rgba(139,92,246,.18));
-      border-color: rgba(110,168,254,.35);
-    }
-
-    .tab-title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 14px;
-      flex: 1;
-    }
-
-    .tab-close {
-      width: 24px;
-      height: 24px;
-      border: 0;
-      border-radius: 8px;
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      cursor: pointer;
-    }
-
-    .tabs .spacer { flex: 1; }
-
-    .bookmarks {
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      overflow-x: auto;
-      min-height: 54px;
-    }
-
-    .bookmark-chip {
-      padding: 9px 12px;
-      font-size: 14px;
-      white-space: nowrap;
-      text-decoration: none;
-      color: var(--text);
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      flex: 0 0 auto;
-    }
-
-    .content {
-      padding: 18px;
-      overflow: auto;
-      background: linear-gradient(180deg, rgba(15,23,42,.76), rgba(2,6,23,.66));
-    }
-
-    .hero {
-      display: grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap: 18px;
-      align-items: start;
-    }
-
-    .card {
-      border: 1px solid rgba(148,163,184,.14);
-      background: rgba(255,255,255,.03);
-      border-radius: 22px;
-      padding: 18px;
-    }
-
-    .desc p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.6;
-      font-size: 15px;
-    }
-
-    .section-title {
-      margin: 0 0 10px;
-      font-size: 14px;
-      letter-spacing: .2px;
-      color: #cfe0ff;
-      text-transform: uppercase;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .mini {
-      padding: 12px;
-      border-radius: 16px;
-      border: 1px solid rgba(148,163,184,.12);
-      background: rgba(255,255,255,.03);
-      color: var(--text);
-      text-decoration: none;
-    }
-
-    .mini span {
-      display: block;
-      color: var(--muted);
-      margin-top: 4px;
-      font-size: 12px;
-    }
-
-    .controls {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 14px;
-    }
-
-    #sj-error {
-      color: #fca5a5;
-      white-space: pre-wrap;
-      margin: 10px 0 0;
-      min-height: 1.2em;
-    }
-    #sj-error-code {
-      color: #cbd5e1;
-      white-space: pre-wrap;
-      overflow-x: auto;
-      margin: 10px 0 0;
-      font-size: 12px;
-    }
-
-    footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 16px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-    footer a {
-      color: #d7e6ff;
-      text-decoration: none;
-      margin-right: 14px;
-    }
-
-    .hidden { display: none !important; }
-
-    @media (max-width: 900px) {
-      .hero { grid-template-columns: 1fr; }
-      .topbar { grid-template-columns: auto 1fr auto; }
-      .brand, .topbar .nav-btn:nth-of-type(2), .topbar .nav-btn:nth-of-type(3) { display: none; }
-    }
-
-    @media (max-width: 640px) {
-      .app { padding: 10px; gap: 10px; }
-      .topbar { grid-template-columns: 1fr auto; }
-      .primary-btn { display: none; }
-      .grid { grid-template-columns: 1fr; }
-      footer { flex-direction: column; align-items: flex-start; }
-    }
-  </style>
-
-  <script src="register-sw.js" defer></script>
-  <script src="search.js" defer></script>
-  <script src="index.js" defer></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <title>Scramjet</title>
+    <link rel="shortcut icon" href="favicon.webp" />
+    
+    <script src="/scram/scramjet.all.js"></script>
+    <script src="/baremux/index.js"></script>
+    
+    <link rel="stylesheet" href="index.css" />
+    <script src="register-sw.js" defer></script>
+    <script src="search.js" defer></script>
+    <script src="index.js" defer></script>
 </head>
-
 <body>
-  <div class="app">
-    <header class="topbar">
-      <div class="brand" title="Scramjet">
-        <img class="logo" src="sj.png" alt="Scramjet" />
-        <div>
-          <h1>Scramjet</h1>
-          <small>Fast proxy browser shell</small>
+    <!-- Animated Background Orbs -->
+    <div class="bg-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Top Navigation -->
+    <nav class="glass-nav">
+        <div class="nav-brand">
+            <img class="logo" src="sj.png" alt="Scramjet" />
+            <span class="brand-text">Scramjet</span>
         </div>
-      </div>
+        <div class="nav-tabs">
+            <button class="tab active" data-tab="home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+                Home
+            </button>
+            <button class="tab" data-tab="shortcuts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                Shortcuts
+            </button>
+            <button class="tab" data-tab="settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                Settings
+            </button>
+        </div>
+        <div class="nav-actions">
+            <button class="icon-btn" id="cloak-btn" title="AB Cloak">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+        </div>
+    </nav>
 
-      <button class="nav-btn" id="backBtn" title="Back">←</button>
-      <button class="nav-btn" id="forwardBtn" title="Forward">→</button>
-
-      <div class="address-shell">
-        <form id="sj-form" autocomplete="off">
-          <input id="sj-search-engine" value="https://www.google.com/search?q=%s" type="hidden" />
-          <input id="sj-address" type="text" placeholder="Search the web or enter a URL" />
-        </form>
-      </div>
-
-      <button class="primary-btn" id="newTabBtn">+ Tab</button>
-    </header>
-
-    <section class="tabs" id="tabsBar" aria-label="Tabs">
-      <div class="tab active" data-tab="1">
-        <div class="tab-title">New Tab</div>
-        <button class="tab-close" type="button" title="Close tab">×</button>
-      </div>
-      <div class="spacer"></div>
-      <button class="tab-action" id="saveBookmarkBtn" type="button" title="Save current page">☆</button>
-    </section>
-
-    <section class="bookmarks" id="bookmarkBar" aria-label="Bookmarks">
-      <span style="color: var(--muted); font-size: 13px; padding: 0 6px;">Bookmarks</span>
-      <a class="bookmark-chip" href="https://www.google.com" target="_blank" rel="noreferrer">Google</a>
-      <a class="bookmark-chip" href="https://github.com" target="_blank" rel="noreferrer">GitHub</a>
-      <a class="bookmark-chip" href="https://www.youtube.com" target="_blank" rel="noreferrer">YouTube</a>
-    </section>
-
-    <main class="content">
-      <div class="hero">
-        <section class="card">
-          <div class="flex-center logo-wrapper header-center" style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-            <img class="logo" src="sj.png" alt="Scramjet" style="width:56px;height:56px;" />
-            <div>
-              <h2 style="margin:0;font-size:24px;">Your browser, but cleaner</h2>
-              <p style="margin:6px 0 0;color:var(--muted);">Tabs, bookmarks, and a polished start page on top of the existing Scramjet flow.</p>
+    <!-- Main Content -->
+    <main>
+        <!-- Home Tab -->
+        <section class="tab-panel active" id="tab-home">
+            <div class="hero">
+                <h1 class="hero-title">Browse <span class="gradient-text">Freely</span></h1>
+                <p class="hero-desc">
+                    Scramjet is an experimental interception based web proxy designed to evade internet censorship and unlock the web.
+                </p>
             </div>
-          </div>
 
-          <div class="desc">
-            <p>
-              Scramjet is an experimental interception-based web proxy. This page gives it a more modern front end while keeping the existing navigation, search, and service-worker setup in place.
-            </p>
-          </div>
+            <form id="sj-form" class="search-container">
+                <input id="sj-search-engine" value="https://www.google.com/search?q=%s" type="hidden" />
+                <div class="search-glass">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input id="sj-address" type="text" placeholder="Search or enter a URL..." autocomplete="off" />
+                    <button type="submit" class="search-go">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </button>
+                </div>
+            </form>
 
-          <div class="controls">
-            <button class="pill-btn" id="homeBtn" type="button">Home</button>
-            <button class="pill-btn" id="addBookmarkBtn" type="button">Add bookmark</button>
-            <button class="pill-btn" id="clearTabsBtn" type="button">Reset tabs</button>
-          </div>
+            <div class="error-box">
+                <p id="sj-error"></p>
+                <pre id="sj-error-code"></pre>
+            </div>
 
-          <p id="sj-error"></p>
-          <pre id="sj-error-code"></pre>
+            <!-- Quick Shortcuts on Home -->
+            <div class="shortcuts-grid quick">
+                <a href="#" class="shortcut" data-url="https://youtube.com">
+                    <div class="shortcut-icon yt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></div>
+                    <span>YouTube</span>
+                </a>
+                <a href="#" class="shortcut" data-url="https://reddit.com">
+                    <div class="shortcut-icon rd"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg></div>
+                    <span>Reddit</span>
+                </a>
+                <a href="#" class="shortcut" data-url="https://x.com">
+                    <div class="shortcut-icon xt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
+                    <span>X</span>
+                </a>
+                <a href="#" class="shortcut" data-url="https://discord.com/app">
+                    <div class="shortcut-icon ds"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></div>
+                    <span>Discord</span>
+                </a>
+                <a href="#" class="shortcut" data-url="https://instagram.com">
+                    <div class="shortcut-icon ig"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg></div>
+                    <span>Instagram</span>
+                </a>
+                <a href="#" class="shortcut" data-url="https://tiktok.com">
+                    <div class="shortcut-icon tk"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.1z"/></svg></div>
+                    <span>TikTok</span>
+                </a>
+            </div>
         </section>
 
-        <aside class="card">
-          <h3 class="section-title">Quick links</h3>
-          <div class="grid">
-            <a class="mini" href="https://news.google.com" target="_blank" rel="noreferrer">News<span>Open a news tab</span></a>
-            <a class="mini" href="https://www.reddit.com" target="_blank" rel="noreferrer">Reddit<span>Open a community tab</span></a>
-            <a class="mini" href="https://mail.google.com" target="_blank" rel="noreferrer">Mail<span>Check inbox</span></a>
-            <a class="mini" href="https://docs.google.com" target="_blank" rel="noreferrer">Docs<span>Work page</span></a>
-          </div>
-        </aside>
-      </div>
+        <!-- Shortcuts Tab -->
+        <section class="tab-panel" id="tab-shortcuts">
+            <div class="panel-header">
+                <h2>All Shortcuts</h2>
+                <p>Jump to your favorite sites instantly through the proxy.</p>
+            </div>
+            <div class="shortcuts-grid">
+                <a href="#" class="shortcut" data-url="https://youtube.com">
+                    <div class="shortcut-icon yt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></div>
+                    <span>YouTube</span>
+                </a>
+                <a href="#" class="shortcut" data-url="https://reddit.com">
+                    <div class="shortcut-icon rd"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg></div>
+                    <span>Reddit</span>
+                </a>
+                <a href="#" class="shortcut" data-url="https://x.com">
+                    <div class="shortcut-icon xt"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
+                    <span>X (Twitter)</span>
+                </a>
+                <a href="#" class="shortcut" data-url="https://discord.com/app">
+                    <div class="shortcut-icon ds"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></div>
+                    <span>Discord</span>
+                </a>
+                <a href="#" class="shortcut" data-url="https://instagram.com">
+                    <div class="shortcut-icon ig"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg></div>
+                    <span>Instagram</span>
+                </a>
+                <a href="#" class="shortcut" data-url="https://tiktok.com">
+                    <div class="shortcut-icon tk"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.1z"/></svg></div>
+                    <span>TikTok</span>
+                </a>
+                <a href="#" class="shortcut" data-url="https://github.com">
+                    <div class="shortcut-icon gh"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></div>
+                    <span>GitHub</span>
+                </a>
+                <a href="#" class="shortcut" data-url="https://spotify.com">
+                    <div class="shortcut-icon sp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/></svg></div>
+                    <span>Spotify</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Settings Tab -->
+        <section class="tab-panel" id="tab-settings">
+            <div class="panel-header">
+                <h2>Settings</h2>
+                <p>Customize your Scramjet experience.</p>
+            </div>
+            <div class="settings-list">
+                <div class="setting-card">
+                    <div>
+                        <h3>AB Cloak</h3>
+                        <p>Open this page in about:blank to hide it from history.</p>
+                    </div>
+                    <button class="btn-primary" id="ab-cloak">Activate</button>
+                </div>
+                <div class="setting-card">
+                    <div>
+                        <h3>Tab Cloak</h3>
+                        <p>Disguise the tab title and favicon.</p>
+                    </div>
+                    <select id="cloak-preset" class="glass-select">
+                        <option value="none">None</option>
+                        <option value="google">Google</option>
+                        <option value="classroom">Google Classroom</option>
+                        <option value="docs">Google Docs</option>
+                        <option value="drive">Google Drive</option>
+                        <option value="canvas">Canvas</option>
+                    </select>
+                </div>
+                <div class="setting-card">
+                    <div>
+                        <h3>Panic Key</h3>
+                        <p>Press <kbd>~</kbd> to instantly redirect to Google.</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="panic-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <footer>
-      <div>
-        <a title="The Mercury Workshop GitHub organization" href="https://github.com/MercuryWorkshop">Mercury Workshop</a>
-        <a title="The example demo app for Scramjet" href="https://github.com/MercuryWorkshop/Scramjet-Demo">GitHub</a>
-        <a title="License information" href="credits.html">Credits</a>
-      </div>
-      <div>
+    <!-- AB Cloak Modal -->
+    <div class="modal-overlay" id="cloak-modal">
+        <div class="modal-glass">
+            <h2>AB Cloak Active</h2>
+            <p>This page has been opened in about:blank. Close this tab to return.</p>
+            <button class="btn-primary" onclick="document.getElementById('cloak-modal').classList.remove('show')">Got it</button>
+        </div>
+    </div>
+
+    <footer class="glass-footer">
+        <div>
+            <a href="https://github.com/MercuryWorkshop">Mercury Workshop</a>
+            <a href="https://github.com/MercuryWorkshop/Scramjet-Demo">GitHub</a>
+            <a href="credits.html">Credits</a>
+        </div>
         <span>Scramjet &copy; MW 2025</span>
-      </div>
     </footer>
-  </div>
-
-  <script>
-    const tabsBar = document.getElementById('tabsBar');
-    const bookmarkBar = document.getElementById('bookmarkBar');
-    const sjAddress = document.getElementById('sj-address');
-    const sjForm = document.getElementById('sj-form');
-    const sjSearchEngine = document.getElementById('sj-search-engine');
-    const newTabBtn = document.getElementById('newTabBtn');
-    const saveBookmarkBtn = document.getElementById('saveBookmarkBtn');
-    const addBookmarkBtn = document.getElementById('addBookmarkBtn');
-    const clearTabsBtn = document.getElementById('clearTabsBtn');
-    const homeBtn = document.getElementById('homeBtn');
-    const backBtn = document.getElementById('backBtn');
-    const forwardBtn = document.getElementById('forwardBtn');
-
-    const TAB_KEY = 'scramjet-tabs-v1';
-    const BOOKMARK_KEY = 'scramjet-bookmarks-v1';
-    let tabs = loadTabs();
-    let activeTabId = tabs.find(t => t.active)?.id ?? tabs[0]?.id ?? 1;
-
-    function loadTabs() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(TAB_KEY) || 'null');
-        if (Array.isArray(saved) && saved.length) return saved;
-      } catch {}
-      return [{ id: 1, title: 'New Tab', url: '', active: true }];
-    }
-
-    function saveTabs() {
-      localStorage.setItem(TAB_KEY, JSON.stringify(tabs));
-    }
-
-    function loadBookmarks() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(BOOKMARK_KEY) || 'null');
-        if (Array.isArray(saved)) return saved;
-      } catch {}
-      return [
-        { title: 'Google', url: 'https://www.google.com' },
-        { title: 'GitHub', url: 'https://github.com' },
-        { title: 'YouTube', url: 'https://www.youtube.com' }
-      ];
-    }
-
-    function saveBookmarks(items) {
-      localStorage.setItem(BOOKMARK_KEY, JSON.stringify(items));
-    }
-
-    function renderTabs() {
-      const spacer = tabsBar.querySelector('.spacer');
-      tabsBar.querySelectorAll('.tab').forEach(el => el.remove());
-      tabs.forEach(tab => {
-        const el = document.createElement('div');
-        el.className = 'tab' + (tab.id === activeTabId ? ' active' : '');
-        el.dataset.tab = tab.id;
-        el.innerHTML = `
-          <div class="tab-title">${escapeHtml(tab.title || 'New Tab')}</div>
-          <button class="tab-close" type="button" title="Close tab">×</button>
-        `;
-        el.addEventListener('click', (e) => {
-          if (e.target.closest('.tab-close')) {
-            closeTab(tab.id);
-            return;
-          }
-          activateTab(tab.id);
-        });
-        tabsBar.insertBefore(el, spacer);
-      });
-      saveTabs();
-    }
-
-    function renderBookmarks() {
-      const label = bookmarkBar.querySelector('span');
-      bookmarkBar.querySelectorAll('.bookmark-chip').forEach(el => el.remove());
-      const bookmarks = loadBookmarks();
-      bookmarks.forEach(item => {
-        const a = document.createElement('a');
-        a.className = 'bookmark-chip';
-        a.href = item.url;
-        a.target = '_blank';
-        a.rel = 'noreferrer';
-        a.textContent = item.title;
-        bookmarkBar.appendChild(a);
-      });
-      bookmarkBar.prepend(label);
-    }
-
-    function activateTab(id) {
-      activeTabId = id;
-      tabs = tabs.map(tab => ({ ...tab, active: tab.id === id }));
-      renderTabs();
-      const tab = tabs.find(t => t.id === id);
-      if (tab) sjAddress.value = tab.url || '';
-    }
-
-    function openTab(url = '', title = 'New Tab') {
-      const id = Date.now();
-      tabs = tabs.map(t => ({ ...t, active: false }));
-      tabs.push({ id, url, title, active: true });
-      activeTabId = id;
-      sjAddress.value = url;
-      renderTabs();
-    }
-
-    function closeTab(id) {
-      if (tabs.length === 1) {
-        tabs = [{ id: Date.now(), title: 'New Tab', url: '', active: true }];
-        activeTabId = tabs[0].id;
-        sjAddress.value = '';
-        renderTabs();
-        return;
-      }
-      const idx = tabs.findIndex(t => t.id === id);
-      tabs = tabs.filter(t => t.id !== id);
-      if (activeTabId === id) {
-        const next = tabs[idx] || tabs[idx - 1] || tabs[0];
-        activeTabId = next.id;
-        next.active = true;
-        sjAddress.value = next.url || '';
-      }
-      renderTabs();
-    }
-
-    function updateActiveTab(url, title) {
-      tabs = tabs.map(tab => tab.id === activeTabId ? { ...tab, url: url ?? tab.url, title: title ?? tab.title } : tab);
-      saveTabs();
-      renderTabs();
-    }
-
-    function addBookmark(title, url) {
-      if (!url) return;
-      const bookmarks = loadBookmarks();
-      if (bookmarks.some(b => b.url === url)) return;
-      bookmarks.unshift({ title: title || url, url });
-      saveBookmarks(bookmarks.slice(0, 20));
-      renderBookmarks();
-    }
-
-    function escapeHtml(str) {
-      return String(str)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-    }
-
-    sjForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const value = sjAddress.value.trim();
-      if (!value) return;
-      updateActiveTab(value, value.replace(/^https?:\/\//, '').slice(0, 28));
-      // Existing search.js/index.js should handle the navigation behavior.
-      sjAddress.blur();
-    });
-
-    newTabBtn.addEventListener('click', () => openTab('', 'New Tab'));
-    homeBtn.addEventListener('click', () => {
-      sjAddress.value = '';
-      updateActiveTab('', 'New Tab');
-    });
-    addBookmarkBtn.addEventListener('click', () => addBookmark(document.title || 'Bookmark', sjAddress.value.trim()));
-    saveBookmarkBtn.addEventListener('click', () => addBookmark(document.title || 'Bookmark', sjAddress.value.trim()));
-    clearTabsBtn.addEventListener('click', () => {
-      tabs = [{ id: Date.now(), title: 'New Tab', url: '', active: true }];
-      activeTabId = tabs[0].id;
-      sjAddress.value = '';
-      renderTabs();
-    });
-
-    backBtn.addEventListener('click', () => history.back());
-    forwardBtn.addEventListener('click', () => history.forward());
-
-    sjAddress.addEventListener('input', () => {
-      updateActiveTab(sjAddress.value.trim(), sjAddress.value.trim() ? sjAddress.value.trim().slice(0, 28) : 'New Tab');
-    });
-
-    window.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key.toLowerCase() === 'l') {
-        e.preventDefault();
-        sjAddress.focus();
-        sjAddress.select();
-      }
-      if (e.ctrlKey && e.key.toLowerCase() === 't') {
-        e.preventDefault();
-        openTab('', 'New Tab');
-      }
-      if (e.ctrlKey && e.key.toLowerCase() === 'd') {
-        e.preventDefault();
-        addBookmark(document.title || 'Bookmark', sjAddress.value.trim());
-      }
-    });
-
-    renderTabs();
-    renderBookmarks();
-  </script>
 </body>
 </html>
