@@ -16,7 +16,7 @@
     #proxy-frame{display:none}
   </style>
 
-  <script src="/scram/scramjet.all.js"></script>
+  <script src="/scram/scramjet.controller.js"></script>
   <script src="/baremux/index.js"></script>
   <link rel="stylesheet" href="index.css" />
   <script src="register-sw.js" defer></script>
@@ -114,10 +114,13 @@
         <div class="widget" id="battery-widget">
           <div class="widget-inner">
             <div id="batt-icon-wrap">
-              <svg viewBox="0 0 38 18" fill="none" xmlns="http://www.w3.org/2000/svg" width="38" height="18">
-                <rect x="0.75" y="0.75" width="33.5" height="16.5" rx="3.25" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.5"/>
-                <rect id="batt-fill" x="2.5" y="2.5" width="26" height="13" rx="2" fill="#6ee7b7"/>
-                <path d="M36 6v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-opacity="0.6"/>
+              <svg viewBox="0 0 40 18" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="18">
+                <!-- outer shell -->
+                <rect x="0.75" y="0.75" width="35.5" height="16.5" rx="3.25" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.45"/>
+                <!-- fill: x=2.5, y=2.5, maxWidth=31 exactly fills interior at 100% -->
+                <rect id="batt-fill" x="2.5" y="2.5" width="31" height="13" rx="1.5" fill="#6ee7b7"/>
+                <!-- nub -->
+                <path d="M38 7v4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.55"/>
               </svg>
             </div>
             <div class="widget-text">
@@ -131,11 +134,8 @@
     </div>
   </div>
 
-  <!-- PROXY IFRAME -->
-  <iframe id="proxy-frame"
-    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads allow-pointer-lock"
-    allow="fullscreen; autoplay; clipboard-write"
-  ></iframe>
+  <!-- Frame container — ScramjetFrame appends its own iframes here -->
+  <div id="frame-container"></div>
 
 </div>
 
@@ -159,8 +159,8 @@
   <div class="stab-pane active" id="stab-cloak">
     <label class="toggle-row"><span>Enable cloak</span><input type="checkbox" id="cloak-toggle" checked /></label>
     <label class="toggle-row"><span>Auto-cloak on load</span><input type="checkbox" id="cloak-auto-toggle" checked /></label>
-    <div class="field-group"><label>Tab title</label><input type="text" id="cloak-title" placeholder="Google Drive" /></div>
-    <div class="field-group"><label>Favicon URL</label><input type="text" id="cloak-favicon-url" placeholder="https://drive.google.com/favicon.ico" /></div>
+    <div class="field-group"><label>Tab title</label><input type="text" id="cloak-title" placeholder="Pysium" /></div>
+    <div class="field-group"><label>Favicon URL</label><input type="text" id="cloak-favicon-url" placeholder="/favicon.ico" /></div>
     <p class="field-label">Quick presets</p>
     <div class="preset-row">
       <button class="preset-btn" data-title="Google Drive" data-favicon="https://drive.google.com/favicon.ico">Drive</button>
