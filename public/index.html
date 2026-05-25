@@ -3,25 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Google Drive</title>
-  <link rel="icon" id="cloak-favicon" href="favicon.webp" />
+  <title>Pysium</title>
+  <link rel="icon" id="cloak-favicon" href="/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
-  <!-- dark bg immediately so no white flash -->
   <style>
     html,body{margin:0;padding:0;background:#071209;height:100%;overflow:hidden}
     #home-page{display:flex}
-    #proxy-frame{display:none}
+    #frame-container{display:none;flex:1;position:relative;overflow:hidden}
+    #frame-container iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:#fff}
   </style>
-
-  <script src="/scram/scramjet.controller.js"></script>
-  <script src="/baremux/index.js"></script>
   <link rel="stylesheet" href="index.css" />
-  <script src="register-sw.js" defer></script>
-  <script src="search.js" defer></script>
-  <script src="index.js" defer></script>
 </head>
 <body>
 
@@ -36,28 +29,23 @@
 <!-- MAIN SHELL -->
 <div id="main-shell">
 
-  <!-- TOP BAR -->
   <div id="top-bar">
     <button class="top-btn" id="home-btn" title="Home">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12L12 3l9 9"/><path d="M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg>
     </button>
-    <button class="top-btn" id="back-btn" title="Back">
+    <button class="top-btn" id="back-btn" title="Back" disabled>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
-    <button class="top-btn" id="forward-btn" title="Forward">
+    <button class="top-btn" id="forward-btn" title="Forward" disabled>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
     <button class="top-btn" id="reload-btn" title="Reload">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
     </button>
-
     <div id="address-bar-wrap">
-      <span id="lock-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
-      </span>
+      <span id="lock-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></span>
       <input id="address-bar" type="text" placeholder="Search or enter a URL…" autocomplete="off" spellcheck="false" />
     </div>
-
     <button class="top-btn" id="fullscreen-btn" title="Fullscreen">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
     </button>
@@ -73,14 +61,12 @@
       <p id="home-sub">your private window to the web</p>
 
       <form id="sj-form">
-        <input id="sj-search-engine" value="https://www.google.com/search?q=%s" type="hidden" />
         <div id="search-wrap">
           <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <input id="sj-address" type="text" placeholder="Search the web freely…" autocomplete="off" spellcheck="false" />
         </div>
       </form>
 
-      <!-- SHORTCUTS -->
       <div id="shortcuts">
         <a class="shortcut" data-url="https://www.youtube.com" href="#"><div class="shortcut-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 002.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.75 15.5v-7l6.5 3.5-6.5 3.5z"/></svg></div><span>YouTube</span></a>
         <a class="shortcut" data-url="https://www.reddit.com" href="#"><div class="shortcut-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 01-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 01.042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 014.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 01.14-.197.35.35 0 01.238-.042l2.906.617a1.214 1.214 0 011.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 00-.231.094.33.33 0 000 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 00.029-.463.33.33 0 00-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 00-.232-.095z"/></svg></div><span>Reddit</span></a>
@@ -90,18 +76,14 @@
         <a class="shortcut" data-url="https://www.tiktok.com" href="#"><div class="shortcut-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></div><span>TikTok</span></a>
       </div>
 
-      <!-- WIDGETS ROW -->
       <div id="widgets-row">
-        <!-- Weather widget -->
-        <div class="widget" id="weather-widget" title="Click to set location">
+        <div class="widget" id="weather-widget" title="Click for weather">
           <div id="weather-loading" class="widget-inner">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="22" height="22"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/><circle cx="12" cy="12" r="4"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="22" height="22"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
             <span>Click for weather</span>
           </div>
           <div id="weather-data" class="widget-inner hidden">
-            <div id="weather-icon-wrap">
-              <svg id="weather-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="28" height="28"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-            </div>
+            <div id="weather-icon-wrap"></div>
             <div class="widget-text">
               <span id="weather-temp" class="widget-val">--°</span>
               <span id="weather-desc" class="widget-sub">--</span>
@@ -109,20 +91,13 @@
             </div>
           </div>
         </div>
-
-        <!-- Battery widget -->
         <div class="widget" id="battery-widget">
           <div class="widget-inner">
-            <div id="batt-icon-wrap">
-              <svg viewBox="0 0 40 18" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="18">
-                <!-- outer shell -->
-                <rect x="0.75" y="0.75" width="35.5" height="16.5" rx="3.25" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.45"/>
-                <!-- fill: x=2.5, y=2.5, maxWidth=31 exactly fills interior at 100% -->
-                <rect id="batt-fill" x="2.5" y="2.5" width="31" height="13" rx="1.5" fill="#6ee7b7"/>
-                <!-- nub -->
-                <path d="M38 7v4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.55"/>
-              </svg>
-            </div>
+            <svg viewBox="0 0 40 18" fill="none" xmlns="http://www.w3.org/2000/svg" width="40" height="18">
+              <rect x="0.75" y="0.75" width="35.5" height="16.5" rx="3.25" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.45"/>
+              <rect id="batt-fill" x="2.5" y="2.5" width="31" height="13" rx="1.5" fill="#6ee7b7"/>
+              <path d="M38 7v4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.55"/>
+            </svg>
             <div class="widget-text">
               <span id="batt-pct" class="widget-val">--%</span>
               <span id="batt-status" class="widget-sub">Battery</span>
@@ -130,21 +105,17 @@
           </div>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- Frame container — ScramjetFrame appends its own iframes here -->
+  <!-- frames go here -->
   <div id="frame-container"></div>
 
-</div>
+</div><!-- /main-shell -->
 
 <!-- SETTINGS PANEL -->
 <div id="settings-panel" class="glass-panel hidden">
-  <div class="panel-header">
-    <span>Settings</span>
-    <button class="panel-close">✕</button>
-  </div>
+  <div class="panel-header"><span>Settings</span><button class="panel-close">✕</button></div>
   <div class="stab-bar">
     <button class="stab-btn active" data-tab="cloak">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Cloak
@@ -172,7 +143,7 @@
     <button id="ab-cloak-btn" class="apply-btn secondary">Open in about:blank</button>
   </div>
   <div class="stab-pane" id="stab-panic">
-    <p class="pane-desc">Panic button or <kbd>Alt+X</kbd> instantly redirects to:</p>
+    <p class="pane-desc">Panic button or <kbd>Alt+X</kbd> redirects to:</p>
     <div class="field-group"><label>Redirect URL</label><input type="text" id="panic-url-input" value="https://classroom.google.com" /></div>
     <button id="panic-save" class="apply-btn">Save</button>
   </div>
@@ -189,7 +160,6 @@
   </div>
 </div>
 
-<!-- FAB -->
 <div id="fab-row">
   <button id="settings-fab">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
@@ -198,6 +168,12 @@
 </div>
 
 <div id="overlay" class="hidden"></div>
+
+<!-- scripts at END of body — no defer needed, DOM already exists -->
+<script src="register-sw.js"></script>
+<script src="/baremux/index.js"></script>
+<script src="/scram/scramjet.controller.js"></script>
+<script src="index.js"></script>
 
 </body>
 </html>
