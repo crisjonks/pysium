@@ -8,12 +8,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
-    html,body{margin:0;padding:0;background:#071209;height:100%;overflow:hidden}
-    #home-page{display:flex}
-    #frame-container{display:none;flex:1;position:relative;overflow:hidden}
-    #frame-container iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:#fff}
-  </style>
   <link rel="stylesheet" href="index.css" />
 </head>
 <body>
@@ -29,6 +23,7 @@
 <!-- MAIN SHELL -->
 <div id="main-shell">
 
+  <!-- TOP BAR -->
   <div id="top-bar">
     <button class="top-btn" id="home-btn" title="Home">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12L12 3l9 9"/><path d="M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg>
@@ -54,13 +49,13 @@
     </button>
   </div>
 
-  <!-- HOME PAGE -->
+  <!-- HOME PAGE (visible by default) -->
   <div id="home-page">
     <div id="home-inner">
       <div id="wordmark">pysium</div>
       <p id="home-sub">your private window to the web</p>
 
-      <form id="sj-form">
+      <form id="sj-form" onsubmit="return false">
         <div id="search-wrap">
           <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <input id="sj-address" type="text" placeholder="Search the web freely…" autocomplete="off" spellcheck="false" />
@@ -82,7 +77,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="22" height="22"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
             <span>Click for weather</span>
           </div>
-          <div id="weather-data" class="widget-inner hidden">
+          <div id="weather-data" class="widget-inner" style="display:none">
             <div id="weather-icon-wrap"></div>
             <div class="widget-text">
               <span id="weather-temp" class="widget-val">--°</span>
@@ -105,16 +100,17 @@
           </div>
         </div>
       </div>
+
     </div>
   </div>
 
-  <!-- frames go here -->
+  <!-- FRAME CONTAINER (hidden by default) -->
   <div id="frame-container"></div>
 
 </div><!-- /main-shell -->
 
-<!-- SETTINGS PANEL -->
-<div id="settings-panel" class="glass-panel hidden">
+<!-- SETTINGS PANEL — only shown on home page via JS -->
+<div id="settings-panel" class="glass-panel" style="display:none">
   <div class="panel-header"><span>Settings</span><button class="panel-close">✕</button></div>
   <div class="stab-bar">
     <button class="stab-btn active" data-tab="cloak">
@@ -132,7 +128,7 @@
     <label class="toggle-row"><span>Auto-cloak on load</span><input type="checkbox" id="cloak-auto-toggle" checked /></label>
     <div class="field-group"><label>Tab title</label><input type="text" id="cloak-title" placeholder="Pysium" /></div>
     <div class="field-group"><label>Favicon URL</label><input type="text" id="cloak-favicon-url" placeholder="/favicon.ico" /></div>
-    <p class="field-label">Quick presets</p>
+    <p class="field-label" style="margin-top:4px">Quick presets</p>
     <div class="preset-row">
       <button class="preset-btn" data-title="Google Drive" data-favicon="https://drive.google.com/favicon.ico">Drive</button>
       <button class="preset-btn" data-title="Canvas" data-favicon="https://du11hjcvx0uqb.cloudfront.net/br/dist/images/favicon-e10d657a73.ico">Canvas</button>
@@ -142,12 +138,12 @@
     <button id="cloak-apply" class="apply-btn">Apply &amp; Save</button>
     <button id="ab-cloak-btn" class="apply-btn secondary">Open in about:blank</button>
   </div>
-  <div class="stab-pane" id="stab-panic">
+  <div class="stab-pane" id="stab-panic" style="display:none">
     <p class="pane-desc">Panic button or <kbd>Alt+X</kbd> redirects to:</p>
     <div class="field-group"><label>Redirect URL</label><input type="text" id="panic-url-input" value="https://classroom.google.com" /></div>
     <button id="panic-save" class="apply-btn">Save</button>
   </div>
-  <div class="stab-pane" id="stab-general">
+  <div class="stab-pane" id="stab-general" style="display:none">
     <div class="field-group">
       <label>Search engine</label>
       <select id="engine-select">
@@ -160,16 +156,17 @@
   </div>
 </div>
 
-<div id="fab-row">
+<!-- FAB — only shown on home page via JS -->
+<div id="fab-row" style="display:none">
   <button id="settings-fab">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     <span>Settings</span>
   </button>
 </div>
 
-<div id="overlay" class="hidden"></div>
+<div id="overlay" style="display:none;position:fixed;inset:0;z-index:250;background:rgba(0,0,0,.3);backdrop-filter:blur(2px)"></div>
 
-<!-- scripts at END of body — no defer needed, DOM already exists -->
+<!-- scripts at end of body, no defer -->
 <script src="register-sw.js"></script>
 <script src="/baremux/index.js"></script>
 <script src="/scram/scramjet.controller.js"></script>
