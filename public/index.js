@@ -1,73 +1,48 @@
-/* PYSIUM — index.js
-   Scramjet init pattern from official docs:
-   https://docs.titaniumnetwork.org/proxies/scramjet/
-   and working embed.html from 7-7-7-10.github.io
-*/
-
+// ── CONFIG ────────────────────────────────────────────────────────────
 var CLOAK_DEFAULTS = { title: 'Pysium', favicon: '/favicon.ico' };
 var SEARCH_ENGINE  = localStorage.getItem('pysium_engine') || 'https://www.google.com/search?q=%s';
 var PANIC_URL      = localStorage.getItem('pysium_panic')  || 'https://classroom.google.com';
+var cloakEnabled   = true;
+var tabs           = [];
+var activeTabId    = null;
+var _tid           = 0;
 
-var tabs        = [];
-var activeTabId = null;
-var cloakEnabled = true;
-var _tid        = 0;
-
-/* ── SCRAMJET — exact pattern from official docs ──────────────────────
-   $scramjetLoadController() is defined in scramjet.controller.js
-   files.wasm + files.worker + files.client + files.shared + files.sync
-   scramjet.init() — no await
-   navigator.serviceWorker.register("sw.js")
-   connection = new BareMux.BareMuxConnection("/baremux/worker.js")
-   await connection.setTransport("/libcurl/index.mjs", [{wisp: wispUrl}])
-*/
+// ── SCRAMJET INIT ─────────────────────────────────────────────────────
+// Files confirmed 200 on this server: scramjet.all.js, scramjet.wasm.wasm, libcurl
 var scramjet   = null;
 var connection = null;
 var wispUrl    = (location.protocol === 'https:' ? 'wss' : 'ws') + '://' + location.host + '/wisp/';
 
-try {
-  // Official pattern — $scramjetLoadController() gives us the class
-  var SJController = (typeof $scramjetLoadController === 'function')
-    ? $scramjetLoadController().ScramjetController
-    : ScramjetController;
+var _transportP = null;
+function ensureTransport() {
+  if (_transportP) return _transportP;
+  if (!connection) return Promise.resolve();
+  _transportP = connection.setTransport('/libcurl/index.mjs', [{ wisp: wispUrl }])
+    .then(function() { console.log('[pysium] transport ready'); })
+    .catch(function(e) { console.warn('[pysium] transport failed:', e.message); _transportP = null; });
+  return _transportP;
+}
 
-  scramjet = new SJController({
+try {
+  var _sj = $scramjetLoadController();
+  scramjet = new _sj.ScramjetController({
     files: {
-      wasm:   '/scram/scramjet.wasm.wasm',
-      worker: '/scram/scramjet.worker.js',
-      client: '/scram/scramjet.client.js',
-      shared: '/scram/scramjet.shared.js',
-      sync:   '/scram/scramjet.sync.js',
-    },
+      wasm: '/scram/scramjet.wasm.wasm',
+      all:  '/scram/scramjet.all.js',
+      sync: '/scram/scramjet.sync.js',
+    }
   });
   scramjet.init();
   navigator.serviceWorker.register('/sw.js');
   connection = new BareMux.BareMuxConnection('/baremux/worker.js');
-  console.log('[pysium] scramjet+baremux initialised');
-} catch (e) {
-  console.error('[pysium] scramjet failed:', e.message);
+  // Pre-warm transport
+  ensureTransport();
+  console.log('[pysium] scramjet ready');
+} catch(e) {
+  console.error('[pysium] scramjet init failed:', e.message);
 }
 
-var transportReady = false;
-async function ensureTransport() {
-  if (transportReady || !connection) return;
-  // Scramjet-App uses libcurl-transport as primary
-  try {
-    await connection.setTransport('/libcurl/index.mjs', [{ wisp: wispUrl }]);
-    transportReady = true;
-    console.log('[pysium] transport: libcurl');
-    return;
-  } catch (e) {}
-  try {
-    await connection.setTransport('/epoxy/index.mjs', [{ wisp: wispUrl }]);
-    transportReady = true;
-    console.log('[pysium] transport: epoxy');
-    return;
-  } catch (e) {}
-  console.warn('[pysium] no transport available — proxy may not work');
-}
-
-/* ── URL helpers ─────────────────────────────────────────────────────── */
+// ── URL HELPERS ───────────────────────────────────────────────────────
 function isURL(s) {
   try { var u = new URL(s); return u.protocol === 'http:' || u.protocol === 'https:'; }
   catch(e) { return false; }
@@ -83,7 +58,7 @@ function resolveInput(raw) {
   return SEARCH_ENGINE.replace('%s', encodeURIComponent(raw));
 }
 
-/* ── Home / frame visibility ─────────────────────────────────────────── */
+// ── VISIBILITY ────────────────────────────────────────────────────────
 function showHome() {
   document.getElementById('home-page').style.display       = 'flex';
   document.getElementById('frame-container').style.display = 'none';
@@ -93,7 +68,7 @@ function showFrame() {
   document.getElementById('frame-container').style.display = 'flex';
 }
 
-/* ── Tabs ─────────────────────────────────────────────────────────────── */
+// ── TABS ──────────────────────────────────────────────────────────────
 function createTab(url) {
   var id     = ++_tid;
   var frame  = null;
@@ -106,40 +81,35 @@ function createTab(url) {
       iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;display:none;background:#fff';
       document.getElementById('frame-container').appendChild(iframe);
 
-      // track URL changes inside the frame
+      // urlchange — best way to track navigation in scramjet
       frame.addEventListener('urlchange', function(e) {
         var t = getTab(id);
         if (!t) return;
-        var u = (e && (e.url || (e.detail && e.detail.url))) || '';
+        var u = e.url || '';
         if (u && u !== t.url) {
-          t.url = u;
+          // push history only if not a back/fwd navigation
           if (t.history[t.historyIdx] !== u) {
             t.history = t.history.slice(0, t.historyIdx + 1);
             t.history.push(u);
             t.historyIdx = t.history.length - 1;
           }
+          t.url = u;
           if (id === activeTabId) {
             document.getElementById('address-bar').value = u;
             updateNavBtns();
           }
         }
-        // grab title
-        try {
-          var doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
-          if (doc && doc.title && doc.title !== t.title) {
-            t.title = doc.title.slice(0, 40);
-            renderTabBar();
-          }
-        } catch(_) {}
+        // poll title/favicon right after url changes
+        pollMeta(id);
       });
-    } catch (e) {
-      console.warn('[pysium] createFrame failed:', e.message);
+    } catch(e) {
+      console.warn('[pysium] createFrame:', e.message);
       frame = null; iframe = null;
     }
   }
 
   tabs.push({ id:id, title:'New Tab', favicon:null, url:'', history:[], historyIdx:-1, frame:frame, iframe:iframe });
-  renderTabBar();
+  renderTabs();
   switchTab(id);
   if (url) navigateTo(url, id);
   return id;
@@ -157,8 +127,8 @@ function closeTab(id) {
   if (tabs[idx].iframe) tabs[idx].iframe.remove();
   tabs.splice(idx, 1);
   if (!tabs.length) { createTab(); return; }
-  if (activeTabId === id) switchTab(tabs[Math.min(idx, tabs.length - 1)].id);
-  else renderTabBar();
+  if (activeTabId === id) switchTab(tabs[Math.min(idx, tabs.length-1)].id);
+  else renderTabs();
 }
 
 function switchTab(id) {
@@ -176,22 +146,22 @@ function switchTab(id) {
     showHome();
     document.getElementById('address-bar').value = '';
   }
-  renderTabBar();
+  renderTabs();
   updateNavBtns();
 }
 
-function renderTabBar() {
+function renderTabs() {
   var list = document.getElementById('tab-list');
   list.innerHTML = '';
   for (var i = 0; i < tabs.length; i++) {
     (function(tab) {
-      var el  = document.createElement('div');
+      var el = document.createElement('div');
       el.className = 'tab' + (tab.id === activeTabId ? ' active' : '');
 
       var fav = document.createElement('img');
       fav.className = 'tab-favicon';
       fav.src = tab.favicon || "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236ee7b7' stroke-width='1.5'><circle cx='12' cy='12' r='9'/><path d='M2 12h20M12 3a15 15 0 010 18M12 3a15 15 0 000 18'/></svg>";
-      fav.onerror = function() { this.style.display = 'none'; };
+      fav.onerror = function() { this.style.display='none'; };
 
       var ttl = document.createElement('span');
       ttl.className = 'tab-title';
@@ -215,8 +185,33 @@ function updateNavBtns() {
   document.getElementById('forward-btn').disabled = !tab || tab.historyIdx >= tab.history.length - 1;
 }
 
-/* ── Navigation ──────────────────────────────────────────────────────── */
-async function navigateTo(raw, tabId) {
+// ── POLL TITLE + FAVICON ──────────────────────────────────────────────
+// ScramjetFrame has no titlechange event — poll contentDocument
+function pollMeta(id) {
+  var tab = getTab(id);
+  if (!tab || !tab.iframe) return;
+  try {
+    var doc = tab.iframe.contentDocument || (tab.iframe.contentWindow && tab.iframe.contentWindow.document);
+    if (!doc || !doc.title) return;
+    var changed = false;
+    if (doc.title && doc.title !== tab.title) {
+      tab.title = doc.title.slice(0, 50);
+      changed = true;
+    }
+    var icon = doc.querySelector('link[rel~="icon"], link[rel~="shortcut"]');
+    if (icon && icon.href && icon.href !== tab.favicon) {
+      tab.favicon = icon.href;
+      changed = true;
+    }
+    if (changed) renderTabs();
+  } catch(e) {}
+}
+
+// Poll every 1.5s for the active tab
+setInterval(function() { pollMeta(activeTabId); }, 1500);
+
+// ── NAVIGATION ────────────────────────────────────────────────────────
+function navigateTo(raw, tabId) {
   tabId = tabId || activeTabId;
   var tab = getTab(tabId);
   if (!tab) return;
@@ -235,13 +230,16 @@ async function navigateTo(raw, tabId) {
     if (tabs[i].iframe) tabs[i].iframe.style.display = 'none';
   }
   if (tab.iframe) tab.iframe.style.display = 'block';
-  document.getElementById('address-bar').value = url;
-  renderTabBar();
+  if (tabId === activeTabId) document.getElementById('address-bar').value = url;
+  renderTabs();
   updateNavBtns();
+  showLoadingBar();
 
   if (tab.frame) {
-    await ensureTransport();
-    tab.frame.go(url);
+    ensureTransport().then(function() {
+      try { tab.frame.go(url); } catch(e) { console.error('[pysium] go():', e); }
+      hideLoadingBar();
+    });
   }
 }
 
@@ -253,11 +251,11 @@ function goHome() {
   }
   showHome();
   document.getElementById('address-bar').value = '';
-  renderTabBar();
+  renderTabs();
   updateNavBtns();
 }
 
-async function goBack() {
+function goBack() {
   var tab = getTab(activeTabId);
   if (!tab || tab.historyIdx <= 0) return;
   tab.historyIdx--;
@@ -269,10 +267,14 @@ async function goBack() {
   }
   if (tab.iframe) tab.iframe.style.display = 'block';
   updateNavBtns();
-  if (tab.frame) { await ensureTransport(); tab.frame.back ? tab.frame.back() : tab.frame.go(tab.url); }
+  showLoadingBar();
+  if (tab.frame) ensureTransport().then(function() {
+    try { tab.frame.back ? tab.frame.back() : tab.frame.go(tab.url); } catch(e){}
+    hideLoadingBar();
+  });
 }
 
-async function goForward() {
+function goForward() {
   var tab = getTab(activeTabId);
   if (!tab || tab.historyIdx >= tab.history.length - 1) return;
   tab.historyIdx++;
@@ -284,52 +286,101 @@ async function goForward() {
   }
   if (tab.iframe) tab.iframe.style.display = 'block';
   updateNavBtns();
-  if (tab.frame) { await ensureTransport(); tab.frame.forward ? tab.frame.forward() : tab.frame.go(tab.url); }
+  showLoadingBar();
+  if (tab.frame) ensureTransport().then(function() {
+    try { tab.frame.forward ? tab.frame.forward() : tab.frame.go(tab.url); } catch(e){}
+    hideLoadingBar();
+  });
 }
 
-async function reloadTab() {
+function reloadTab() {
   var tab = getTab(activeTabId);
   if (!tab || !tab.url || !tab.frame) return;
-  await ensureTransport();
-  tab.frame.reload ? tab.frame.reload() : tab.frame.go(tab.url);
+  showLoadingBar();
+  ensureTransport().then(function() {
+    try { tab.frame.reload ? tab.frame.reload() : tab.frame.go(tab.url); } catch(e){}
+    hideLoadingBar();
+  });
 }
 
-/* ── Cloak ───────────────────────────────────────────────────────────── */
+// ── LOADING BAR ───────────────────────────────────────────────────────
+function showLoadingBar() {
+  var b = document.getElementById('loading-bar');
+  if (b) { b.style.width = '0'; b.style.opacity = '1'; b.style.width = '80%'; }
+}
+function hideLoadingBar() {
+  var b = document.getElementById('loading-bar');
+  if (!b) return;
+  b.style.width = '100%';
+  setTimeout(function() { b.style.opacity = '0'; setTimeout(function() { b.style.width = '0'; }, 300); }, 200);
+}
+
+// ── OPEN IN NEW TAB (popout) ───────────────────────────────────────────
+function openInNewTab() {
+  var tab = getTab(activeTabId);
+  if (!tab || !tab.url) return;
+  // Open the real URL in a new browser tab
+  window.open(tab.url, '_blank');
+}
+
+// ── FULLSCREEN (iframe content only) ──────────────────────────────────
+function toggleFullscreen() {
+  var tab = getTab(activeTabId);
+  var el = (tab && tab.iframe) ? tab.iframe : document.getElementById('frame-container');
+  if (!document.fullscreenElement) {
+    (el.requestFullscreen || el.webkitRequestFullscreen || function(){}).call(el);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || function(){}).call(document);
+  }
+}
+
+// ── CLOAK ─────────────────────────────────────────────────────────────
 function applyCloak(title, fav) {
   document.title = title || CLOAK_DEFAULTS.title;
   var el = document.getElementById('cloak-favicon');
   if (el) el.href = fav || CLOAK_DEFAULTS.favicon;
 }
+
 function loadCloakSettings() {
   var s = JSON.parse(localStorage.getItem('pysium_cloak') || '{}');
   cloakEnabled = s.enabled !== false;
-  var title = s.title   || CLOAK_DEFAULTS.title;
-  var fav   = s.favicon || CLOAK_DEFAULTS.favicon;
+  var title = s.title   || '';
+  var fav   = s.favicon || '';
   var auto  = s.autoCloak !== false;
   document.getElementById('cloak-toggle').checked      = cloakEnabled;
   document.getElementById('cloak-title').value         = title;
   document.getElementById('cloak-favicon-url').value   = fav;
   document.getElementById('cloak-auto-toggle').checked = auto;
-  if (cloakEnabled && auto) applyCloak(title, fav);
-}
-function saveCloakSettings() {
-  var title = document.getElementById('cloak-title').value.trim()       || CLOAK_DEFAULTS.title;
-  var fav   = document.getElementById('cloak-favicon-url').value.trim() || CLOAK_DEFAULTS.favicon;
-  cloakEnabled = document.getElementById('cloak-toggle').checked;
-  var auto = document.getElementById('cloak-auto-toggle').checked;
-  localStorage.setItem('pysium_cloak', JSON.stringify({ enabled:cloakEnabled, title:title, favicon:fav, autoCloak:auto }));
-  if (cloakEnabled) applyCloak(title, fav);
-  else { document.title = 'Pysium'; document.getElementById('cloak-favicon').href = '/favicon.ico'; }
+  if (cloakEnabled && auto && title) applyCloak(title, fav);
 }
 
-/* ── Battery ─────────────────────────────────────────────────────────── */
+function saveCloakSettings() {
+  var title = document.getElementById('cloak-title').value.trim();
+  var fav   = document.getElementById('cloak-favicon-url').value.trim();
+  cloakEnabled = document.getElementById('cloak-toggle').checked;
+  var auto  = document.getElementById('cloak-auto-toggle').checked;
+  localStorage.setItem('pysium_cloak', JSON.stringify({ enabled:cloakEnabled, title:title, favicon:fav, autoCloak:auto }));
+  if (cloakEnabled && title) applyCloak(title, fav);
+  else if (!cloakEnabled) { document.title = 'Pysium'; document.getElementById('cloak-favicon').href = '/favicon.ico'; }
+}
+
+// Autosave settings on any input change
+function autosaveSettings() {
+  saveCloakSettings();
+  var url = document.getElementById('panic-url-input').value.trim();
+  if (url) { PANIC_URL = url; localStorage.setItem('pysium_panic', url); }
+  SEARCH_ENGINE = document.getElementById('engine-select').value;
+  localStorage.setItem('pysium_engine', SEARCH_ENGINE);
+}
+
+// ── BATTERY ───────────────────────────────────────────────────────────
 function initBattery() {
   if (!navigator.getBattery) return;
   navigator.getBattery().then(function(bat) {
     function update() {
       var pct = Math.round(bat.level * 100);
       document.getElementById('batt-pct').textContent    = pct + '%';
-      document.getElementById('batt-status').textContent = bat.charging ? '⚡ Charging' : (pct <= 20 ? '⚠ Low' : 'Battery');
+      document.getElementById('batt-status').textContent = bat.charging ? 'Charging' : (pct <= 20 ? 'Low' : 'Battery');
       var fill = document.getElementById('batt-fill');
       if (fill) {
         fill.setAttribute('width', (bat.level * 31).toFixed(1));
@@ -342,7 +393,7 @@ function initBattery() {
   }).catch(function(){});
 }
 
-/* ── Settings modal ─────────────────────────────────────────────────── */
+// ── SETTINGS MODAL ────────────────────────────────────────────────────
 function openSettings() {
   document.getElementById('settings-modal').style.display = 'flex';
 }
@@ -350,17 +401,27 @@ function closeSettings() {
   document.getElementById('settings-modal').style.display = 'none';
 }
 
-/* ── Early cloak ─────────────────────────────────────────────────────── */
+// ── SPLASH SCREEN ─────────────────────────────────────────────────────
+function hideSplash() {
+  var splash = document.getElementById('splash');
+  if (!splash) return;
+  splash.classList.add('splash-out');
+  setTimeout(function() { splash.remove(); }, 600);
+}
+
+// ── EARLY CLOAK ───────────────────────────────────────────────────────
 (function() {
   try {
     var s = JSON.parse(localStorage.getItem('pysium_cloak') || '{}');
-    if (s.enabled !== false && s.autoCloak !== false) document.title = s.title || CLOAK_DEFAULTS.title;
+    if (s.enabled !== false && s.autoCloak !== false && s.title) {
+      document.title = s.title;
+      if (s.favicon) document.getElementById('cloak-favicon').href = s.favicon;
+    }
   } catch(e) {}
 }());
 
-/* ── Wire up all event listeners ─────────────────────────────────────── */
-
-// Nav bar
+// ── WIRE UP ───────────────────────────────────────────────────────────
+// Nav
 document.getElementById('home-btn').addEventListener('click', goHome);
 document.getElementById('back-btn').addEventListener('click', goBack);
 document.getElementById('forward-btn').addEventListener('click', goForward);
@@ -379,15 +440,15 @@ document.querySelectorAll('.shortcut').forEach(function(a) {
   a.addEventListener('click', function(e) { e.preventDefault(); if (a.dataset.url) navigateTo(a.dataset.url); });
 });
 
-// Tabs
+// New tab
 document.getElementById('new-tab-btn').addEventListener('click', function() { createTab(); });
 
-// Fullscreen
+// Open in new browser tab
+document.getElementById('newtab-btn').addEventListener('click', openInNewTab);
+
+// Fullscreen — fullscreens the iframe content only
 var fsBtn = document.getElementById('fullscreen-btn');
-fsBtn.addEventListener('click', function() {
-  if (!document.fullscreenElement) document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
-  else document.exitFullscreen && document.exitFullscreen();
-});
+fsBtn.addEventListener('click', toggleFullscreen);
 document.addEventListener('fullscreenchange', function() {
   fsBtn.innerHTML = document.fullscreenElement
     ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v3a2 2 0 01-2 2H3m18 0h-3a2 2 0 01-2-2V3m0 18v-3a2 2 0 012-2h3M3 16h3a2 2 0 012 2v3"/></svg>'
@@ -409,55 +470,49 @@ document.getElementById('settings-modal').addEventListener('click', function(e) 
 document.querySelectorAll('.mtab').forEach(function(btn) {
   btn.addEventListener('click', function() {
     document.querySelectorAll('.mtab').forEach(function(b) { b.classList.remove('active'); });
-    document.querySelectorAll('.mpane').forEach(function(p) { p.style.display = 'none'; });
+    document.querySelectorAll('.mpane').forEach(function(p) { p.classList.remove('active'); });
     btn.classList.add('active');
-    document.getElementById('mpane-' + btn.dataset.tab).style.display = 'flex';
+    document.getElementById('mpane-' + btn.dataset.tab).classList.add('active');
   });
 });
 
-// Cloak
+// Cloak presets
 document.querySelectorAll('.preset-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
     document.getElementById('cloak-title').value       = btn.dataset.title;
     document.getElementById('cloak-favicon-url').value = btn.dataset.favicon;
+    autosaveSettings();
   });
 });
-document.getElementById('cloak-apply').addEventListener('click', function() { saveCloakSettings(); closeSettings(); });
-document.getElementById('cloak-toggle').addEventListener('change', function() {
-  cloakEnabled = this.checked;
-  if (!cloakEnabled) { document.title = 'Pysium'; document.getElementById('cloak-favicon').href = '/favicon.ico'; }
-  else applyCloak(
-    document.getElementById('cloak-title').value.trim() || CLOAK_DEFAULTS.title,
-    document.getElementById('cloak-favicon-url').value.trim() || CLOAK_DEFAULTS.favicon
-  );
-});
+
+// about:blank cloak
 document.getElementById('ab-cloak-btn').addEventListener('click', function() {
-  var title = document.getElementById('cloak-title').value.trim() || CLOAK_DEFAULTS.title;
-  var fav   = document.getElementById('cloak-favicon-url').value.trim() || CLOAK_DEFAULTS.favicon;
+  var title = document.getElementById('cloak-title').value.trim() || 'Pysium';
+  var fav   = document.getElementById('cloak-favicon-url').value.trim() || '/favicon.ico';
   var w = window.open('about:blank', '_blank');
   if (!w) { alert('Allow popups first.'); return; }
-  w.document.write('<!doctype html><html><head><title>'+title+'</title><link rel="icon" href="'+fav+'"/><style>*{margin:0;padding:0;border:none;overflow:hidden}html,body,iframe{width:100%;height:100%;display:block}</style></head><body><iframe src="'+location.href+'" allow="fullscreen" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads"></iframe></body></html>');
+  // Panic still works in AB cloak — we inject a keydown listener
+  var panicScript = 'document.addEventListener("keydown",function(e){if(e.altKey&&e.key==="x")window.location.replace(' + JSON.stringify(PANIC_URL) + ')});';
+  w.document.write('<!doctype html><html><head><title>'+title+'</title><link rel="icon" href="'+fav+'"/><style>*{margin:0;padding:0;border:none;overflow:hidden}html,body,iframe{width:100%;height:100%;display:block}</style><script>'+panicScript+'<\/script></head><body><iframe src="'+location.href+'" allow="fullscreen" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads"></iframe></body></html>');
   w.document.close();
 });
 
-// Panic save
-document.getElementById('panic-save').addEventListener('click', function() {
-  var url = document.getElementById('panic-url-input').value.trim();
-  if (url) { PANIC_URL = url; localStorage.setItem('pysium_panic', url); }
-  closeSettings();
+// Autosave all settings on change
+['cloak-toggle','cloak-auto-toggle','cloak-title','cloak-favicon-url','panic-url-input','engine-select'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('change', autosaveSettings);
+  if (el && (el.tagName === 'INPUT' && el.type === 'text')) el.addEventListener('input', autosaveSettings);
 });
 
-// Search engine
-document.getElementById('engine-select').value = SEARCH_ENGINE;
-document.getElementById('engine-select').addEventListener('change', function() {
-  SEARCH_ENGINE = this.value; localStorage.setItem('pysium_engine', this.value);
-});
-
-// Restore settings
+// Init
 loadCloakSettings();
 document.getElementById('panic-url-input').value = PANIC_URL;
+document.getElementById('engine-select').value   = SEARCH_ENGINE;
 initBattery();
 
-// Boot
+// Hide splash after short delay
+setTimeout(hideSplash, 1800);
+
+// Open first tab
 createTab();
 updateNavBtns();
