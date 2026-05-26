@@ -12,6 +12,16 @@
 </head>
 <body>
 
+<!-- SPLASH -->
+<div id="splash">
+  <div id="splash-inner">
+    <img id="splash-logo" src="/pysium.png" alt="Pysium" onerror="this.style.display='none'" />
+    <div id="splash-name">pysium</div>
+    <div id="splash-tagline" class="splash-text"></div>
+  </div>
+</div>
+
+<!-- TAB BAR -->
 <div id="tab-bar">
   <div id="tab-list"></div>
   <button id="new-tab-btn" title="New Tab">
@@ -19,6 +29,10 @@
   </button>
 </div>
 
+<!-- LOADING BAR -->
+<div id="loading-bar"></div>
+
+<!-- MAIN SHELL -->
 <div id="main-shell">
   <div id="top-bar">
     <button class="top-btn" id="home-btn" title="Home">
@@ -37,7 +51,11 @@
       <span id="lock-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></span>
       <input id="address-bar" type="text" placeholder="Search or enter a URL…" autocomplete="off" spellcheck="false" />
     </div>
-    <button class="top-btn" id="fullscreen-btn" title="Fullscreen">
+    <!-- open current page in a real new browser tab -->
+    <button class="top-btn" id="newtab-btn" title="Open in new tab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    </button>
+    <button class="top-btn" id="fullscreen-btn" title="Fullscreen content">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
     </button>
     <button class="top-btn" id="panic-btn" title="Panic — Alt+X">
@@ -45,6 +63,7 @@
     </button>
   </div>
 
+  <!-- HOME PAGE -->
   <div id="home-page">
     <div id="home-inner">
       <div id="wordmark">pysium</div>
@@ -90,7 +109,7 @@
   <div id="frame-container"></div>
 </div>
 
-<!-- SETTINGS MODAL -->
+<!-- SETTINGS MODAL — hidden by default via CSS -->
 <div id="settings-modal" class="modal-overlay">
   <div class="modal-box">
     <div class="modal-header">
@@ -111,49 +130,79 @@
       </button>
     </div>
     <div class="modal-content">
-      <div class="mpane" id="mpane-cloak">
-        <label class="toggle-row"><span>Enable cloak</span><input type="checkbox" id="cloak-toggle" checked /></label>
-        <label class="toggle-row"><span>Auto-cloak on load</span><input type="checkbox" id="cloak-auto-toggle" checked /></label>
-        <div class="field-group"><label>Tab title</label><input type="text" id="cloak-title" placeholder="Pysium" /></div>
-        <div class="field-group"><label>Favicon URL</label><input type="text" id="cloak-favicon-url" placeholder="/favicon.ico" /></div>
+      <!-- CLOAK -->
+      <div class="mpane active" id="mpane-cloak">
+        <div class="setting-row">
+          <div class="setting-label">
+            <span class="setting-name">Enable cloak</span>
+            <span class="setting-desc">Disguise this tab with a custom title and favicon</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="cloak-toggle" checked /><span class="slider"></span></label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">
+            <span class="setting-name">Auto-cloak on load</span>
+            <span class="setting-desc">Apply cloak immediately when the page opens</span>
+          </div>
+          <label class="switch"><input type="checkbox" id="cloak-auto-toggle" checked /><span class="slider"></span></label>
+        </div>
+        <div class="setting-divider"></div>
         <div class="field-group">
-          <label>Presets</label>
+          <label>Tab title</label>
+          <input type="text" id="cloak-title" placeholder="e.g. Google Drive" />
+        </div>
+        <div class="field-group">
+          <label>Favicon URL</label>
+          <input type="text" id="cloak-favicon-url" placeholder="https://drive.google.com/favicon.ico" />
+        </div>
+        <div class="field-group">
+          <label>Quick presets</label>
           <div class="preset-row">
-            <button class="preset-btn" data-title="Google Drive" data-favicon="https://drive.google.com/favicon.ico">Drive</button>
-            <button class="preset-btn" data-title="Canvas" data-favicon="https://du11hjcvx0uqb.cloudfront.net/br/dist/images/favicon-e10d657a73.ico">Canvas</button>
-            <button class="preset-btn" data-title="Classroom" data-favicon="https://ssl.gstatic.com/classroom/favicon.png">Classroom</button>
-            <button class="preset-btn" data-title="Google Docs" data-favicon="https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico">Docs</button>
+            <button class="preset-btn" data-title="Google Drive"   data-favicon="https://drive.google.com/favicon.ico">Drive</button>
+            <button class="preset-btn" data-title="Canvas"         data-favicon="https://du11hjcvx0uqb.cloudfront.net/br/dist/images/favicon-e10d657a73.ico">Canvas</button>
+            <button class="preset-btn" data-title="Classroom"      data-favicon="https://ssl.gstatic.com/classroom/favicon.png">Classroom</button>
+            <button class="preset-btn" data-title="Google Docs"    data-favicon="https://ssl.gstatic.com/docs/documents/images/kix-favicon7.ico">Docs</button>
+            <button class="preset-btn" data-title="Slides"         data-favicon="https://ssl.gstatic.com/docs/presentations/images/favicon5.ico">Slides</button>
           </div>
         </div>
-        <div class="btn-row">
-          <button class="btn-primary" id="cloak-apply">Apply &amp; Save</button>
-          <button class="btn-secondary" id="ab-cloak-btn">about:blank</button>
-        </div>
+        <button class="btn-secondary full" id="ab-cloak-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6m-6 4h4"/></svg>
+          Open in about:blank tab
+        </button>
+        <p class="setting-note">Settings save automatically. Panic (Alt+X) works inside about:blank too.</p>
       </div>
-      <div class="mpane hidden" id="mpane-panic">
-        <p class="hint">Redirect when panic is triggered (<kbd>Alt+X</kbd> or ⚡ button).</p>
-        <div class="field-group"><label>Redirect URL</label><input type="text" id="panic-url-input" value="https://classroom.google.com" /></div>
-        <button class="btn-primary" id="panic-save">Save</button>
-      </div>
-      <div class="mpane hidden" id="mpane-search">
+
+      <!-- PANIC -->
+      <div class="mpane" id="mpane-panic">
         <div class="field-group">
-          <label>Search engine</label>
+          <label>Panic redirect URL</label>
+          <input type="text" id="panic-url-input" placeholder="https://classroom.google.com" />
+          <span class="field-hint">Press Alt+X or the
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="12" height="12" style="vertical-align:middle"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            button to instantly redirect to this URL.
+          </span>
+        </div>
+        <p class="setting-note">Changes save automatically.</p>
+      </div>
+
+      <!-- SEARCH -->
+      <div class="mpane" id="mpane-search">
+        <div class="field-group">
+          <label>Default search engine</label>
           <select id="engine-select">
             <option value="https://www.google.com/search?q=%s">Google</option>
             <option value="https://duckduckgo.com/?q=%s">DuckDuckGo</option>
             <option value="https://search.brave.com/search?q=%s">Brave</option>
             <option value="https://www.bing.com/search?q=%s">Bing</option>
           </select>
+          <span class="field-hint">Used when you type a non-URL into the address bar or search box.</span>
         </div>
+        <p class="setting-note">Changes save automatically.</p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- EXACT load order from working Radon-Games / official docs:
-     1. baremux (defines BareMux global)
-     2. scramjet.all.js (defines $scramjetLoadController)
-     3. our code -->
 <script src="/baremux/index.js"></script>
 <script src="/scram/scramjet.all.js"></script>
 <script src="index.js"></script>
